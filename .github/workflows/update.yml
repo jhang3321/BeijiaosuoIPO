@@ -1,0 +1,40 @@
+name: 更新北交所打新日历
+
+on:
+  schedule:
+    # UTC 23:30 = 北京时间次日 07:30
+    - cron: '30 23 * * *'
+  workflow_dispatch:        # 支持手动触发
+
+permissions:
+  contents: write           # 允许提交回仓库
+
+jobs:
+  update-calendar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 安装 Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 安装依赖
+        run: pip install requests icalendar
+
+      - name: 运行脚本生成 .ics
+        run: python bse_ipo_calendar.py
+
+      - name: 有变化才提交
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain bse_ipo_calendar.ics)" ]; then
+            git add bse_ipo_calendar.ics
+            git commit -m "chore: 自动更新北交所打新日历 [skip ci]"
+            git push
+          else
+            echo "日历无变化，跳过提交。"
+          fi
