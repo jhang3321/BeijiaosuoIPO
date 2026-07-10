@@ -14,7 +14,8 @@ import re
 import sys
 import json
 import hashlib
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, time, timedelta
+from zoneinfo import ZoneInfo
 
 import requests
 from icalendar import Calendar, Event, Alarm
@@ -29,6 +30,13 @@ TIMEOUT = 15              # 网络请求超时（秒）
 OUTPUT_FILE = "bse_ipo_calendar.ics"
 CALENDAR_NAME = "北交所打新日历"
 TIMEZONE = "Asia/Shanghai"
+TZ = ZoneInfo(TIMEZONE)
+
+# 事件显示时段（北京时间）：申购 8:30-9:00，上市 9:30-10:00
+PURCHASE_START = time(8, 30)
+PURCHASE_END = time(9, 0)
+LISTING_START = time(9, 30)
+LISTING_END = time(10, 0)
 
 # 顶格资金估算系数：单账户申购上限约为初始发行量的 5%
 CAP_RATIO = 0.05
@@ -159,9 +167,10 @@ def build_purchase_event(stock: dict, day: date) -> Event:
         f"申购时段 8:35-15:00，资金需提前全额到位冻结"
     )
 
-    event = _new_all_day_event(title, day, desc)
-    # 提醒：前一天晚上，提前约 13 小时（即申购日 00:00 往前 13 小时 = 前一天 11:00 触发…
-    # 采用触发点为事件开始前 13 小时，落在前一晚）
+    start = datetime.combine(day, PURCHASE_START, tzinfo=TZ)
+    end = datetime.combine(day, PURCHASE_END, tzinfo=TZ)
+    event = _new_timed_event(title, start, end, desc)
+    # 提醒：前一天晚上（申购当日 8:30 往前 13 小时 = 前一天 19:30）
     _add_alarm(event, timedelta(hours=-13), f"明日申购 {name}")
     return event
 
@@ -174,20 +183,23 @@ def build_listing_event(stock: dict, day: date) -> Event:
     title = f"📈上市 {name}({code})"
     desc = f"代码：{code}\n策略提示：首日分批卖出、尾盘清仓"
 
-    event = _new_all_day_event(title, day, desc)
+    start = datetime.combine(day, LISTING_START, tzinfo=TZ)
+    end = datetime.combine(day, LISTING_END, tzinfo=TZ)
+    event = _new_timed_event(title, start, end, desc)
+    # 提醒：当天早上（上市当日 9:30 往前 1.5 小时 = 当天 8:00）
     _add_alarm(event, timedelta(hours=-1, minutes=-30), f"今日上市 {name}")
     return event
 
 
-def _new_all_day_event(title: str, day: date, desc: str) -> Event:
-    """创建一个全天事件（DTSTART 为 date 类型即表示全天）。"""
+def _new_timed_event(title: str, start: datetime, end: datetime, desc: str) -> Event:
+    """创建一个定时事件（DTSTART/DTEND 为带时区的 datetime）。"""
     event = Event()
-    event.add("uid", make_uid(title, day))
+    event.add("uid", make_uid(title, start.date()))
     event.add("summary", title)
     event.add("description", desc)
-    event.add("dtstart", day)               # date 类型 => 全天事件
-    event.add("dtend", day + timedelta(days=1))
-    event.add("transp", "TRANSPARENT")
+    event.add("dtstart", start)             # 带 tzinfo 的 datetime => 定时事件
+    event.add("dtend", end)
+    event.add("transp", "OPAQUE")
     return event
 
 
@@ -222,6 +234,8 @@ def build_calendar(stocks: list) -> Calendar:
         if listing_day:
             cal.add_component(build_listing_event(stock, listing_day))
 
+    # 补齐 VTIMEZONE 组件，保证各日历客户端正确解析时区
+    cal.add_missing_timezones()
     return cal
 
 
