@@ -15,6 +15,8 @@
 - 抓取范围：最新 **10** 只新股（数据按时间升序排列，最新数据在最后一页）
 - 字段说明：申购日 `purchaseDate`、上市日 `enterPremiumDate`（北交所对上市日的命名）、发行价 `issuePrice`、市盈率 `peRatio`、初始发行量 `initialIssueAmount`
 
+> 日期字段是北京时间 0 点的毫秒时间戳，脚本按 `Asia/Shanghai` 解析——若按运行机器的本地时区（GitHub Actions 为 UTC）解析，会整体偏成前一天。
+
 > `stockCode` 为新三板原始代码（如 `874075`），上市后交易代码变为 `920` 开头，脚本仅将其作为备注展示。
 
 ## 本地运行

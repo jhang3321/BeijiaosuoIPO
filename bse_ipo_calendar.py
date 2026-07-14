@@ -114,7 +114,9 @@ def to_date(field) -> date | None:
     将接口的日期对象转换为 date。
 
     日期字段是对象（形如 {"time": 1751817600000, ...}），取 time（毫秒时间戳）
-    转换。字段可能为 null（如上市日未定），返回 None 由调用方跳过。
+    转换。时间戳是北京时间 0 点，必须按 Asia/Shanghai 解析：若用运行机器的本地
+    时区（GitHub Actions 为 UTC），会被算成前一天。
+    字段可能为 null（如上市日未定），返回 None 由调用方跳过。
     """
     if not field or not isinstance(field, dict):
         return None
@@ -122,7 +124,7 @@ def to_date(field) -> date | None:
     if ts is None:
         return None
     try:
-        return datetime.fromtimestamp(ts / 1000).date()
+        return datetime.fromtimestamp(ts / 1000, TZ).date()
     except (ValueError, OSError, TypeError):
         return None
 
