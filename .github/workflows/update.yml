@@ -2,8 +2,8 @@ name: 更新北交所打新日历
 
 on:
   schedule:
-    # UTC 23:30 = 北京时间次日 07:30
-    - cron: '30 23 * * *'
+    # 北京时间 08:00-22:00 每 2 小时一次（UTC = 北京 -8）
+    - cron: '0 0,2,4,6,8,10,12,14 * * *'
   workflow_dispatch:        # 支持手动触发
 
 permissions:
