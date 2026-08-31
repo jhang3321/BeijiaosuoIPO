@@ -93,9 +93,9 @@ SUMMARY:🔔申购 信胜科技(920093)
 DTSTART;TZID=Asia/Shanghai:20260812T083000
 DTEND;TZID=Asia/Shanghai:20260812T090000
 UID:fcac4888a61a3912f0aaf1dc620f2ebe@bse-ipo-calendar
-DESCRIPTION:代码：920093\n发行价：14.35 元\n发行市盈率：9.2\
- n估算顶格资金：约 2583.00 万元\n申购时段 8:35-15:00，资金
- 需提前全额到位冻结
+DESCRIPTION:代码：920093\n发行价：14.35 元\n发行市盈率：9.2
+ \n估算顶格资金：约 2583.00 万元\n申购时段 8:35-15:00，资
+ 金需提前全额到位冻结
 TRANSP:OPAQUE
 BEGIN:VALARM
 ACTION:DISPLAY
