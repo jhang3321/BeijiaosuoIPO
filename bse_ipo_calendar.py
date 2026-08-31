@@ -143,10 +143,22 @@ def _fmt_num(value) -> str:
     return "—" if value is None else str(value)
 
 
+def pick_code(stock: dict) -> str:
+    """
+    返回用于展示的交易代码。
+
+    fxCode 是北交所上市后的交易代码（920 开头），是投资者实际下单用的代码；
+    stockCode 是新三板原始代码（如 874640），仅作备注。优先用 fxCode，
+    缺失时回退到 stockCode。
+    """
+    fx = (stock.get("fxCode") or "").strip()
+    return fx if fx else (stock.get("stockCode") or "").strip()
+
+
 def build_purchase_event(stock: dict, day: date) -> Event:
     """构建申购日全天事件（提醒：前一天晚上，提前约 13 小时）。"""
     name = stock.get("stockName", "未知")
-    code = stock.get("stockCode", "")
+    code = pick_code(stock)
     price = stock.get("issuePrice")
     pe = stock.get("peRatio")
     amount = stock.get("initialIssueAmount")
@@ -180,7 +192,7 @@ def build_purchase_event(stock: dict, day: date) -> Event:
 def build_listing_event(stock: dict, day: date) -> Event:
     """构建上市日全天事件（提醒：当天早上，提前约 1.5 小时）。"""
     name = stock.get("stockName", "未知")
-    code = stock.get("stockCode", "")
+    code = pick_code(stock)
 
     title = f"📈上市 {name}({code})"
     desc = f"代码：{code}\n策略提示：首日分批卖出、尾盘清仓"
@@ -247,7 +259,7 @@ def print_summary(stocks: list) -> None:
     print(f"{'名称':<10}{'代码':<10}{'申购日':<14}{'上市日':<14}")
     for stock in stocks:
         name = stock.get("stockName", "未知")
-        code = stock.get("stockCode", "")
+        code = pick_code(stock)
         pd = to_date(stock.get("purchaseDate"))
         ld = to_date(stock.get("enterPremiumDate"))
         pd_s = pd.isoformat() if pd else "—"
